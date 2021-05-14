@@ -26,7 +26,7 @@ class _DatePickerCustomState extends State<DatePickerCustom> {
   }
 
   Widget _buildBody() {
-    return Center(child: WheelDatePicker());
+    return Center(child: WheelDatePicker(maxYear: DateTime.now().year,));
   }
 
 

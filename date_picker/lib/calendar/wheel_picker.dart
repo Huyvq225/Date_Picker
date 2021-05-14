@@ -2,14 +2,19 @@ import 'package:date_picker/constant/app_constant.dart';
 import 'package:date_picker/constant/palette.dart';
 import 'package:date_picker/model/date_time_model.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class WheelDatePicker extends StatefulWidget {
-
-  WheelDatePicker({this.locale = 'vi', this.minYear = 1009, this.maxYear = 3000});
+  WheelDatePicker(
+      {this.locale = 'vi',
+      this.minYear = 1009,
+      this.maxYear = 3023,
+      this.initDate});
 
   String locale;
   int minYear;
   int maxYear;
+  DateTime initDate = DateTime.now();
 
   @override
   _WheelDatePickerState createState() => _WheelDatePickerState();
@@ -18,6 +23,9 @@ class WheelDatePicker extends StatefulWidget {
 class _WheelDatePickerState extends State<WheelDatePicker> {
   final items = List<int>.generate(100, (i) => i);
 
+  DateTime _now = DateTime.now();
+  DateTime _dateSelected;
+
   List<DateTimeModel> _listDateModels = [];
   List<DateTimeModel> _listMonthModels = [];
   List<DateTimeModel> _listYearModels = [];
@@ -25,6 +33,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
   @override
   void initState() {
     super.initState();
+    _dateSelected = widget.initDate ?? DateTime.now();
     _listDateModels = _parseListDatesToModel();
     _listYearModels = _parseListYearsToModel();
     _listMonthModels = _parseListMonthsToModel();
@@ -37,10 +46,11 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
 
   Widget _buildContent() {
     return Container(
+      color: Colors.red,
       height: 200,
       child: Stack(
         children: [
-          // _buildMagnifier(),
+          _buildMagnifier(),
           _buildListWheels(),
         ],
       ),
@@ -65,7 +75,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
         child: Row(
           children: [
             _buildWheel(data: _listDateModels),
-            _buildWheel(flex: 2,data: _listMonthModels),
+            _buildWheel(flex: 2, data: _listMonthModels),
             _buildWheel(data: _listYearModels),
           ],
         ),
@@ -81,34 +91,51 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
         children: data.map((model) {
           return Text(
             model.time.toString(),
-            style: TextStyle(color: Palette.PRIMARY_COLOR),
+            style: TextStyle(
+                color:
+                    (model.selected) ? Palette.WHITE : Palette.PRIMARY_COLOR),
           );
         }).toList(),
         useMagnifier: true,
         magnification: 1.5,
         itemExtent: 35.0,
         diameterRatio: 1.2,
-        onSelectedItemChanged: (index) {},
+        onSelectedItemChanged: (index) {
+          setState(() {
+            for(var item in data) {
+              if (item == data[index]) {
+                item.selected = true;
+                _dateSelected = DateTime(_dateSelected.year,_dateSelected.month,data[index].index);
+              } else {
+                item.selected = false;
+              }
+            }
+          });
+        },
       ),
     );
   }
 
   List<DateTimeModel> _parseListYearsToModel() {
     // List<DateTimeModel> = _getListMonth(year: _yearSelected);
-    List<DateTimeModel> _listYearModels = List<DateTimeModel>.generate(
-      (widget.maxYear - widget.minYear),
-          (year) => DateTimeModel(year.toString(),
-          false, year),
-    );
+    // List<DateTimeModel> _listYearModels = List<DateTimeModel>.generate(
+    //   (widget.maxYear - widget.minYear),
+    //       (year) => DateTimeModel(year.toString(),
+    //       false, year),
+    // );
+    List<DateTimeModel> _listYearModels = [];
+    for (int i = widget.maxYear; i >= widget.minYear; i--) {
+      _listYearModels
+          .add(DateTimeModel(i.toString(), i == _dateSelected.year, i));
+    }
 
-    return _listYearModels.reversed.toList();
+    return _listYearModels.toList();
   }
 
   List<DateTimeModel> _parseListDatesToModel() {
     List<DateTimeModel> _listDateModels = List<DateTimeModel>.generate(
       30,
-          (date) => DateTimeModel(date.toString(),
-          false, date),
+      (date) => DateTimeModel(date.toString(), false, date),
     );
 
     return _listDateModels.reversed.toList();
@@ -187,7 +214,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     List<DateTimeModel> _listMonthModels = [];
     List<String> _listMonthsByLocale = [];
 
-    switch(widget.locale) {
+    switch (widget.locale) {
       case 'vi':
         _listMonthsByLocale = AppConstants.VIETNAM_MONTHS;
         break;
@@ -197,8 +224,10 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
       default:
         break;
     }
-    for(int i = 0; i < _listMonthsByLocale.length; i++) {
-      _listMonthModels.add(DateTimeModel(_listMonthsByLocale[i], false, 1),);
+    for (int i = 0; i < _listMonthsByLocale.length; i++) {
+      _listMonthModels.add(
+        DateTimeModel(_listMonthsByLocale[i], false, 1),
+      );
     }
     return _listMonthModels;
   }
