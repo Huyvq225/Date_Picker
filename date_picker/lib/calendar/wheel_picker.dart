@@ -25,6 +25,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
 
   DateTime _now = DateTime.now();
   DateTime _dateSelected;
+  DateTimeModel _modelSelected;
 
   List<DateTimeModel> _listDateModels = [];
   List<DateTimeModel> _listMonthModels = [];
@@ -37,6 +38,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     _listDateModels = _parseListDatesToModel();
     _listYearModels = _parseListYearsToModel();
     _listMonthModels = _parseListMonthsToModel();
+    _modelSelected = _listYearModels.first;
   }
 
   @override
@@ -46,7 +48,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
 
   Widget _buildContent() {
     return Container(
-      color: Colors.red,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
       height: 200,
       child: Stack(
         children: [
@@ -75,15 +77,32 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
         child: Row(
           children: [
             _buildWheel(data: _listDateModels),
-            _buildWheel(flex: 2, data: _listMonthModels),
-            _buildWheel(data: _listYearModels),
+            _buildWheel(
+                flex: 2,
+                data: _listMonthModels,
+                condition: _dateSelected.month,
+                onChange: (index) {
+                  _dateSelected = _dateSelected.copyWith(
+                      month: _listMonthModels[index].index);
+                }),
+            _buildWheel(
+                data: _listYearModels,
+                condition: _dateSelected.year,
+                onChange: (index) {
+                  _dateSelected = _dateSelected.copyWith(
+                      year: _listYearModels[index].index);
+                }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildWheel({int flex = 1, List<DateTimeModel> data}) {
+  Widget _buildWheel(
+      {int flex = 1,
+      List<DateTimeModel> data,
+      Function(int) onChange,
+      int condition}) {
     return Expanded(
       flex: flex,
       child: ListWheelScrollView(
@@ -92,8 +111,10 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
           return Text(
             model.time.toString(),
             style: TextStyle(
-                color:
-                    (model.selected) ? Palette.WHITE : Palette.PRIMARY_COLOR),
+              color: (model.index == condition)
+                  ? Palette.WHITE
+                  : Palette.PRIMARY_COLOR,
+            ),
           );
         }).toList(),
         useMagnifier: true,
@@ -102,14 +123,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
         diameterRatio: 1.2,
         onSelectedItemChanged: (index) {
           setState(() {
-            for(var item in data) {
-              if (item == data[index]) {
-                item.selected = true;
-                _dateSelected = DateTime(_dateSelected.year,_dateSelected.month,data[index].index);
-              } else {
-                item.selected = false;
-              }
-            }
+            onChange(index);
           });
         },
       ),
@@ -117,12 +131,6 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
   }
 
   List<DateTimeModel> _parseListYearsToModel() {
-    // List<DateTimeModel> = _getListMonth(year: _yearSelected);
-    // List<DateTimeModel> _listYearModels = List<DateTimeModel>.generate(
-    //   (widget.maxYear - widget.minYear),
-    //       (year) => DateTimeModel(year.toString(),
-    //       false, year),
-    // );
     List<DateTimeModel> _listYearModels = [];
     for (int i = widget.maxYear; i >= widget.minYear; i--) {
       _listYearModels
@@ -141,75 +149,6 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     return _listDateModels.reversed.toList();
   }
 
-  // List<DatePickerModel> _getListMonth({int year}) {
-  //   _listDate = _getListDate();
-  //   final int _monthNow = DateTime.now().month;
-  //   final int _yearNow = DateTime.now().year;
-  //   final List<DatePickerModel> _listMonthByLocal = _getFullMonth();
-  //   if (year < _yearNow) {
-  //     for (int i = 0; i < _listMonthByLocal.length; i++) {
-  //       if (i == _monthSelected - 1) {
-  //         _listMonthByLocal[i].selected = true;
-  //       }
-  //     }
-  //     return _listMonthByLocal;
-  //   } else if (year == _yearNow) {
-  //     final List<DatePickerModel> _listMonthOfCurrentYear = [];
-  //     for (int i = 0; i < _listMonthByLocal.length; i++) {
-  //       if (i <= _monthNow - 1) {
-  //         if (i == _monthSelected - 1) {
-  //           _listMonthByLocal[i].selected = true;
-  //         }
-  //         _listMonthOfCurrentYear.add(_listMonthByLocal[i]);
-  //       }
-  //     }
-  //     return _listMonthOfCurrentYear;
-  //   }
-  //   return [];
-  // }
-
-  // List<DatePickerModel> _getListDate() {
-  //   final int _monthNow = DateTime.now().month;
-  //   final int _dateNow = DateTime.now().day;
-  //   final int _yearNow = DateTime.now().year;
-  //   final List<DatePickerModel> _listDateModel = [];
-  //   bool _isSelected = false;
-  //   final int _quantity = DateTime(_yearSelected, _monthSelected + 1, 0).day;
-  //   if (_monthNow == _monthSelected && _yearNow == _yearSelected) {
-  //     for (int i = 0; i < _dateNow; i++) {
-  //       if (i == _daySelected - 1) {
-  //         _isSelected = true;
-  //       } else if (_dateNow < _daySelected && i == _dateNow - 1) {
-  //         _isSelected = true;
-  //         _daySelected = _dateNow;
-  //         dayScrollController.animateToItem(_dateNow,
-  //             duration: const Duration(milliseconds: 200), curve: Curves.ease);
-  //       } else {
-  //         _isSelected = false;
-  //       }
-  //       _listDateModel.add(
-  //         DatePickerModel('${i + 1}', _isSelected, i + 1),
-  //       );
-  //     }
-  //   } else {
-  //     for (int i = 0; i < _quantity; i++) {
-  //       if (i == _daySelected - 1) {
-  //         _isSelected = true;
-  //       } else if (_quantity < _daySelected && i == _quantity - 1) {
-  //         _isSelected = true;
-  //         _daySelected = _quantity;
-  //       } else {
-  //         _isSelected = false;
-  //       }
-  //       _listDateModel.add(
-  //         DatePickerModel('${i + 1}', _isSelected, i + 1),
-  //       );
-  //     }
-  //   }
-  //
-  //   return _listDateModel;
-  // }
-
   List<DateTimeModel> _parseListMonthsToModel() {
     List<DateTimeModel> _listMonthModels = [];
     List<String> _listMonthsByLocale = [];
@@ -226,9 +165,15 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     }
     for (int i = 0; i < _listMonthsByLocale.length; i++) {
       _listMonthModels.add(
-        DateTimeModel(_listMonthsByLocale[i], false, 1),
+        DateTimeModel(_listMonthsByLocale[i], i == _dateSelected.month, i + 1),
       );
     }
     return _listMonthModels;
+  }
+}
+
+extension DateTimeExtension on DateTime {
+  DateTime copyWith({int year, int month, int date}) {
+    return DateTime(year ?? this.year, month ?? this.month, day ?? this.day);
   }
 }
