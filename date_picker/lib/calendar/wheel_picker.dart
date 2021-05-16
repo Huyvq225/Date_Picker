@@ -5,11 +5,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class WheelDatePicker extends StatefulWidget {
-  WheelDatePicker(
-      {this.locale = 'vi',
-      this.minYear = 1009,
-      this.maxYear = 3023,
-      this.initDate});
+  WheelDatePicker({this.locale = 'vi',
+    this.minYear = 1009,
+    this.maxYear = 3023,
+    this.initDate});
 
   String locale;
   int minYear;
@@ -25,7 +24,6 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
 
   DateTime _now = DateTime.now();
   DateTime _dateSelected;
-  DateTimeModel _modelSelected;
 
   List<DateTimeModel> _listDateModels = [];
   List<DateTimeModel> _listMonthModels = [];
@@ -38,7 +36,6 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     _listDateModels = _parseListDatesToModel();
     _listYearModels = _parseListYearsToModel();
     _listMonthModels = _parseListMonthsToModel();
-    _modelSelected = _listYearModels.first;
   }
 
   @override
@@ -49,10 +46,11 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
   Widget _buildContent() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15),
+      color: Colors.red,
       height: 200,
       child: Stack(
         children: [
-          _buildMagnifier(),
+          // _buildMagnifier(),
           _buildListWheels(),
         ],
       ),
@@ -73,17 +71,34 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
   Widget _buildListWheels() {
     return Center(
       child: Container(
-        width: MediaQuery.of(context).size.width,
+        width: MediaQuery
+            .of(context)
+            .size
+            .width,
         child: Row(
           children: [
-            _buildWheel(data: _listDateModels),
+            _buildWheel(
+                data: _listDateModels,
+                condition: _dateSelected.day,
+                onChange: (index) {
+                  _dateSelected =
+                      _dateSelected.copyWith(day: _listDateModels[index].index);
+                }),
             _buildWheel(
                 flex: 2,
                 data: _listMonthModels,
                 condition: _dateSelected.month,
                 onChange: (index) {
-                  _dateSelected = _dateSelected.copyWith(
-                      month: _listMonthModels[index].index);
+                  DateTime _monthSelected = DateTime(_dateSelected.year, _listMonthModels[index].index);
+                  if (_dateSelected.day > _monthSelected.numberOfDay()) {
+                    _dateSelected = _dateSelected.copyWith(
+                        month: _listMonthModels[index].index, day: _monthSelected.numberOfDay());
+                    _listDateModels = _parseListDatesToModel();
+                  } else {
+                    _dateSelected = _dateSelected.copyWith(
+                        month: _listMonthModels[index].index);
+                  }
+
                 }),
             _buildWheel(
                 data: _listYearModels,
@@ -98,11 +113,10 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     );
   }
 
-  Widget _buildWheel(
-      {int flex = 1,
-      List<DateTimeModel> data,
-      Function(int) onChange,
-      int condition}) {
+  Widget _buildWheel({int flex = 1,
+    List<DateTimeModel> data,
+    Function(int) onChange,
+    int condition}) {
     return Expanded(
       flex: flex,
       child: ListWheelScrollView(
@@ -110,6 +124,7 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
         children: data.map((model) {
           return Text(
             model.time.toString(),
+            // key: UniqueKey(),
             style: TextStyle(
               color: (model.index == condition)
                   ? Palette.WHITE
@@ -140,15 +155,6 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     return _listYearModels.toList();
   }
 
-  List<DateTimeModel> _parseListDatesToModel() {
-    List<DateTimeModel> _listDateModels = List<DateTimeModel>.generate(
-      30,
-      (date) => DateTimeModel(date.toString(), false, date),
-    );
-
-    return _listDateModels.reversed.toList();
-  }
-
   List<DateTimeModel> _parseListMonthsToModel() {
     List<DateTimeModel> _listMonthModels = [];
     List<String> _listMonthsByLocale = [];
@@ -170,10 +176,27 @@ class _WheelDatePickerState extends State<WheelDatePicker> {
     }
     return _listMonthModels;
   }
+
+  List<DateTimeModel> _parseListDatesToModel() {
+    final int _numberOfDay = _dateSelected.numberOfDay();
+    List<DateTimeModel> _listDateModels = [];
+
+    for (int i = 1; i <= _numberOfDay; i++) {
+      _listDateModels.add(
+        DateTimeModel((i).toString(), i == _dateSelected.day, i),
+      );
+    }
+
+    return _listDateModels.reversed.toList();
+  }
 }
 
 extension DateTimeExtension on DateTime {
-  DateTime copyWith({int year, int month, int date}) {
+  DateTime copyWith({int year, int month, int day}) {
     return DateTime(year ?? this.year, month ?? this.month, day ?? this.day);
+  }
+
+  int numberOfDay() {
+    return DateTime(this.year, this.month + 1, 0).day;
   }
 }
